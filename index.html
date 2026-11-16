@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10151b">
+  <title>PlayStation reserveringen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="eyebrow">DE PLAYSTATION IS VAN JULLIE DRIE</div>
+      <h1>Wie speelt <span>wanneer?</span></h1>
+      <p>Reserveer een tijdslot. Bij dubbele boekingen beslist een eerlijke loting.</p>
+    </header>
+
+    <section class="panel setup" aria-labelledby="setup-title">
+      <div class="section-heading"><div><div class="eyebrow">EERST EVEN INSTELLEN</div><h2 id="setup-title">Wie zijn er?</h2></div><span id="storage-tag" class="tag">Alleen op dit apparaat</span></div>
+      <form id="names-form" class="names-form">
+        <label>Broer 1<input name="brother1" maxlength="24" required></label>
+        <label>Broer 2<input name="brother2" maxlength="24" required></label>
+        <label>Broer 3<input name="brother3" maxlength="24" required></label>
+        <button class="button button-dark" type="submit">Namen opslaan</button>
+      </form>
+      <p class="small-note">Reserveringen worden lokaal in deze browser bewaard. Gebruik met z’n drieën hetzelfde apparaat en dezelfde browser.</p>
+    </section>
+
+    <div class="columns">
+      <section class="panel booking" aria-labelledby="booking-title">
+        <div class="section-heading"><div><div class="eyebrow">PLAN JE SESSIE</div><h2 id="booking-title">Slot reserveren</h2></div><span class="icon">＋</span></div>
+        <form id="booking-form">
+          <label>Wie wil spelen?<select id="player" required><option value="">Vul eerst de namen in</option></select></label>
+          <div class="form-row"><label>Datum<input id="date" type="date" required></label><label>Starttijd<select id="time" required></select></label></div>
+          <label>Speelduur<select id="duration"><option value="60">1 uur</option><option value="90">1,5 uur</option><option value="120" selected>2 uur</option><option value="180">3 uur</option></select></label>
+          <button class="button button-primary" type="submit">Reservering aanvragen <span>→</span></button>
+        </form>
+        <div class="rule"><span class="coin">✦</span><p><strong>Zelfde tijdslot?</strong> Dan wordt er geloot onder iedereen die dat slot wil. Met 2 spelers heeft ieder 50% kans, met 3 spelers 33%.</p></div>
+      </section>
+
+      <section class="panel schedule" aria-labelledby="schedule-title">
+        <div class="section-heading"><div><div class="eyebrow">OVERZICHT</div><h2 id="schedule-title">Reserveringen</h2></div><div><button id="refresh-button" class="text-button" type="button">Ververs</button><button id="clear-button" class="text-button" type="button">Wis alles</button></div></div>
+        <div class="filter-row"><label for="filter-date">Bekijk datum</label><input id="filter-date" type="date"></div>
+        <div id="reservation-list" class="reservation-list"></div>
+        <div id="empty-state" class="empty-state"><span>◷</span><strong>Nog geen reserveringen</strong><p>De eerste speler kan hierboven een slot aanvragen.</p></div>
+      </section>
+    </div>
+    <footer>Gemaakt voor eerlijke speeltijd <span>✦</span></footer>
+  </main>
+  <dialog id="result-dialog"><div class="dialog-inner"><button id="close-dialog" class="close" aria-label="Sluiten">×</button><div id="result-icon" class="result-icon">✦</div><div class="eyebrow">DE LOTING IS GEDAAN</div><h2 id="result-title"></h2><p id="result-copy"></p><button id="result-ok" class="button button-primary">Oké, duidelijk</button></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

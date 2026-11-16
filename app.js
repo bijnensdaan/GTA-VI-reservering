@@ -150,9 +150,14 @@ async function handleSharedBooking() {
   const previous = slotBookings(date, time), oldWinner = previous?.winner || '';
   try {
     await postShared('reserve', { player, date, time, duration });
-    const slot = slotBookings(date, time);
+    let slot = slotBookings(date, time);
+    for (let attempt = 0; attempt < 4 && (!slot || !slot.players.includes(player)); attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 900));
+      await refreshShared();
+      slot = slotBookings(date, time);
+    }
     $('#filter-date').value = date; render();
-    if (!slot || !slot.players.includes(player)) return showToast('Reservering geweigerd: het slot kan niet meer worden geboekt.');
+    if (!slot || !slot.players.includes(player)) return showToast('De Sheet heeft deze reservering niet bevestigd. Probeer opnieuw of controleer de Apps Script-implementatie.');
     if (slot.players.length === 1) showToast(`${player} heeft het slot gereserveerd.`);
     else showResult(slot.winner === player, slot.winner, slot.players.length, player, oldWinner);
     bookingForm.reset(); $('#date').value = date;

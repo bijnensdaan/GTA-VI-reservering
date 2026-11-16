@@ -16,6 +16,8 @@ function setup() {
   if (bookings.getLastRow() === 0) bookings.getRange(1, 1, 1, BOOKING_HEADERS.length).setValues([BOOKING_HEADERS]);
   bookings.setFrozenRows(1);
   bookings.getRange(1, 1, 1, BOOKING_HEADERS.length).setFontWeight('bold');
+  bookings.getRange('B:B').setNumberFormat('yyyy-mm-dd');
+  bookings.getRange('C:C').setNumberFormat('hh:mm');
   let settings = ss.getSheetByName(SETTINGS_TAB);
   if (!settings) settings = ss.insertSheet(SETTINGS_TAB);
   if (settings.getLastRow() === 0) settings.getRange('A1:C2').setValues([['Broer 1', 'Broer 2', 'Broer 3'], ['', '', '']]);
@@ -83,6 +85,7 @@ function reserve_(sheet, request) {
   } else {
     sheet.appendRow([Utilities.getUuid(), date, time, slotDuration, JSON.stringify(players), winner, 'booked', '', '']);
   }
+  SpreadsheetApp.flush();
   return output_({ ok: true, winner: winner, players: players });
 }
 
@@ -106,14 +109,29 @@ function changeStatus_(sheet, id, status) {
 function readState_() {
   const ss = spreadsheet_();
   const sheet = ss.getSheetByName(BOOKINGS_TAB);
-  return { names: readNames_(ss), bookings: bookingRows_(sheet).map(({ row, ...item }) => item) };
+  return { names: readNames_(ss), bookings: bookingRows_(sheet, ss.getSpreadsheetTimeZone()).map(({ row, ...item }) => item) };
 }
-function bookingRows_(sheet) {
+function bookingRows_(sheet, timezone) {
   if (!sheet || sheet.getLastRow() < 2) return [];
+  const tz = timezone || spreadsheet_().getSpreadsheetTimeZone();
   return sheet.getRange(2, 1, sheet.getLastRow() - 1, BOOKING_HEADERS.length).getValues().map((r, index) => ({
-    row: index + 2, id: String(r[0]), date: String(r[1]), time: String(r[2]), duration: Number(r[3]),
+    row: index + 2, id: String(r[0]), date: normalizeDate_(r[1], tz), time: normalizeTime_(r[2], tz), duration: Number(r[3]),
     players: safePlayers_(r[4]), winner: String(r[5]), status: String(r[6]), started: String(r[6]) === 'started'
   }));
+}
+function normalizeDate_(value, timezone) {
+  if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value, timezone, 'yyyy-MM-dd');
+  return String(value || '').trim();
+}
+function normalizeTime_(value, timezone) {
+  if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value, timezone, 'HH:mm');
+  if (typeof value === 'number' && isFinite(value)) {
+    const total = ((Math.round(value * 1440) % 1440) + 1440) % 1440;
+    return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+  }
+  const text = String(value || '').trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  return match ? String(Number(match[1])).padStart(2, '0') + ':' + match[2] : text;
 }
 function safePlayers_(value) { try { const result = JSON.parse(String(value || '[]')); return Array.isArray(result) ? result : []; } catch (err) { return []; } }
 function readNames_(ss) { const values = ss.getSheetByName(SETTINGS_TAB).getRange('A2:C2').getDisplayValues()[0]; return values.map(value => String(value).trim()); }

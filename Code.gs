@@ -18,6 +18,7 @@ function setup() {
   bookings.getRange(1, 1, 1, BOOKING_HEADERS.length).setFontWeight('bold');
   bookings.getRange('B:B').setNumberFormat('yyyy-mm-dd');
   bookings.getRange('C:C').setNumberFormat('hh:mm');
+  dedupeSlots_(bookings);
   let settings = ss.getSheetByName(SETTINGS_TAB);
   if (!settings) settings = ss.insertSheet(SETTINGS_TAB);
   if (settings.getLastRow() === 0) settings.getRange('A1:C2').setValues([['Broer 1', 'Broer 2', 'Broer 3'], ['', '', '']]);
@@ -47,6 +48,7 @@ function doPost(e) {
     const sheet = ss.getSheetByName(BOOKINGS_TAB);
     if (action === 'configure') return configure_(ss, payload);
     if (action === 'reserve') return reserve_(sheet, payload);
+    if (action === 'delete') return deleteBooking_(sheet, payload.id);
     if (action === 'start') return changeStatus_(sheet, payload.id, 'started');
     if (action === 'finish') return changeStatus_(sheet, payload.id, 'done');
     if (action === 'clear') {
@@ -68,6 +70,7 @@ function reserve_(sheet, request) {
   if (startsAt.getTime() < Date.now() + 2 * 60 * 60 * 1000) return output_({ ok: false, error: 'Reserveer minstens twee uur van tevoren.' });
   const names = readNames_(spreadsheet_());
   if (!names.includes(player)) return output_({ ok: false, error: 'Naam staat niet in de instellingen.' });
+  dedupeSlots_(sheet);
   const all = bookingRows_(sheet);
   let found = null;
   for (const entry of all) if (entry.date === date && entry.time === time) { found = entry; break; }
@@ -106,6 +109,15 @@ function changeStatus_(sheet, id, status) {
   return output_({ ok: true });
 }
 
+function deleteBooking_(sheet, id) {
+  const row = bookingRows_(sheet).find(entry => entry.id === String(id || ''));
+  if (!row) return output_({ ok: false, error: 'Reservering niet gevonden.' });
+  if (row.status !== 'booked') return output_({ ok: false, error: 'Alleen een nog niet gestarte reservering kan worden verwijderd.' });
+  sheet.deleteRow(row.row);
+  SpreadsheetApp.flush();
+  return output_({ ok: true });
+}
+
 function readState_() {
   const ss = spreadsheet_();
   const sheet = ss.getSheetByName(BOOKINGS_TAB);
@@ -116,8 +128,45 @@ function bookingRows_(sheet, timezone) {
   const tz = timezone || spreadsheet_().getSpreadsheetTimeZone();
   return sheet.getRange(2, 1, sheet.getLastRow() - 1, BOOKING_HEADERS.length).getValues().map((r, index) => ({
     row: index + 2, id: String(r[0]), date: normalizeDate_(r[1], tz), time: normalizeTime_(r[2], tz), duration: Number(r[3]),
-    players: safePlayers_(r[4]), winner: String(r[5]), status: String(r[6]), started: String(r[6]) === 'started'
+    players: safePlayers_(r[4]), winner: String(r[5]), status: String(r[6]), started: String(r[6]) === 'started', startedAt: r[7] || '', endedAt: r[8] || ''
   }));
+}
+function dedupeSlots_(sheet) {
+  const rows = bookingRows_(sheet);
+  const groupsBySlot = new Map();
+  rows.forEach(row => {
+    const key = row.date + '|' + row.time;
+    if (!groupsBySlot.has(key)) groupsBySlot.set(key, []);
+    groupsBySlot.get(key).push(row);
+  });
+  const plans = [];
+  const deleteRows = [];
+  groupsBySlot.forEach(group => {
+    if (group.length < 2) return;
+    group.sort((a, b) => a.row - b.row);
+    const players = [...new Set(group.flatMap(row => row.players).filter(Boolean))];
+    if (!players.length) return;
+    const keep = group[0];
+    const statuses = group.map(row => row.status);
+    const status = statuses.includes('started') ? 'started' : statuses.includes('done') ? 'done' : 'booked';
+    const oldWinners = new Set(group.map(row => row.winner));
+    const winner = oldWinners.size === 1 && players.includes(keep.winner)
+      ? keep.winner
+      : players[Math.floor(Math.random() * players.length)];
+    const startedAt = group.find(row => row.status === 'started' && row.startedAt)?.startedAt || keep.startedAt || '';
+    const endedAt = status === 'done' ? (group.find(row => row.endedAt)?.endedAt || keep.endedAt || '') : '';
+    plans.push({ date: keep.date, time: keep.time, duration: keep.duration, players, winner, status, startedAt, endedAt });
+    group.slice(1).forEach(row => deleteRows.push(row.row));
+  });
+  deleteRows.sort((a, b) => b - a).forEach(row => sheet.deleteRow(row));
+  if (plans.length) {
+    const remaining = bookingRows_(sheet);
+    plans.forEach(plan => {
+      const keep = remaining.find(row => row.date === plan.date && row.time === plan.time);
+      if (keep) sheet.getRange(keep.row, 4, 1, 6).setValues([[plan.duration, JSON.stringify(plan.players), plan.winner, plan.status, plan.startedAt, plan.endedAt]]);
+    });
+    SpreadsheetApp.flush();
+  }
 }
 function normalizeDate_(value, timezone) {
   if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value, timezone, 'yyyy-MM-dd');

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#180f24">
   <title>GTA VI — Speelschema</title>
-  <link rel="stylesheet" href="style.css?v=sheet-datetime-1">
+  <link rel="stylesheet" href="style.css?v=slot-delete-1">
 </head>
 <body>
   <main class="shell">
@@ -60,7 +60,7 @@
           <label>Speelduur<select id="duration"><option value="60">1 uur</option><option value="90">1,5 uur</option><option value="120" selected>2 uur</option><option value="180">3 uur</option></select></label>
           <button class="button button-primary" type="submit">Reservering aanvragen <span>→</span></button>
         </form>
-        <div class="rule"><span class="coin">✦</span><p><strong>Zelfde tijdslot?</strong> Dan wordt er geloot onder iedereen die dat slot wil. Met 2 spelers heeft ieder 50% kans, met 3 spelers 33%.</p></div>
+        <div class="rule"><span class="coin">✦</span><p><strong>Zelfde tijdslot?</strong> Er staat één reservering per slot. Aanvragers voor hetzelfde slot doen samen mee aan de loting: ieder krijgt met 2 spelers 50% kans, met 3 spelers 33%.</p></div>
         <p class="booking-notice">⏱ Reserveer je slot minstens 2 uur van tevoren. Last-minute reserveren kan niet.</p>
       </section>
 
@@ -75,7 +75,7 @@
   </main>
   <dialog id="result-dialog"><div class="dialog-inner"><button id="close-dialog" class="close" aria-label="Sluiten">×</button><div id="result-icon" class="result-icon">✦</div><div class="eyebrow">DE LOTING IS GEDAAN</div><h2 id="result-title"></h2><p id="result-copy"></p><button id="result-ok" class="button button-primary">Oké, duidelijk</button></div></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="config.js?v=sheet-datetime-1"></script>
-  <script src="app.js?v=sheet-datetime-1"></script>
+  <script src="config.js?v=slot-delete-1"></script>
+  <script src="app.js?v=slot-delete-1"></script>
 </body>
 </html>

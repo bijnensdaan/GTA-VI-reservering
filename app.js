@@ -148,6 +148,7 @@ async function handleSharedBooking() {
   if (!player || !date) return showToast('Kies je naam en een datum.');
   if (!isAtLeastTwoHoursAhead(date, time)) return showToast('Je moet minstens 2 uur van tevoren reserveren.');
   const previous = slotBookings(date, time), oldWinner = previous?.winner || '';
+  if (previous?.players.includes(player)) return showToast(`${player} staat al op de lijst voor dit slot.`);
   try {
     await postShared('reserve', { player, date, time, duration });
     let slot = slotBookings(date, time);
@@ -196,6 +197,8 @@ function render() {
     if (!item.started && item.status !== 'done') {
       const start = document.createElement('button'); start.className = 'action'; start.textContent = 'Ik begin nu';
       start.addEventListener('click', () => confirmStart(item.id)); controls.append(start);
+      const remove = document.createElement('button'); remove.className = 'action action-delete'; remove.textContent = 'Verwijder';
+      remove.addEventListener('click', () => removeBooking(item.id)); controls.append(remove);
     }
     if (item.started) {
       const finish = document.createElement('button'); finish.className = 'action'; finish.textContent = 'Sessie klaar';
@@ -216,6 +219,21 @@ function finishSession(id) {
   if (!item || !confirm(`Markeer de sessie van ${item.winner} als afgelopen?`)) return;
   if (isShared) { postShared('finish', { id }).then(() => showToast('Sessie afgerond.')).catch(() => showToast('Kon sessie niet afronden.')); return; }
   item.status = 'done'; item.endedAt = new Date().toISOString(); save(); render(); showToast('Sessie afgerond.');
+}
+async function removeBooking(id) {
+  const item = state.bookings.find(booking => booking.id === id);
+  if (!item || item.status !== 'booked') return showToast('Alleen een nog niet gestarte reservering kan worden verwijderd.');
+  if (!confirm(`De reservering voor ${item.date} om ${item.time} verwijderen? Eventuele loting voor dit slot verdwijnt ook.`)) return;
+  if (isShared) {
+    try {
+      await postShared('delete', { id });
+      if (state.bookings.some(booking => booking.id === id)) return showToast('De Sheet heeft het verwijderen niet bevestigd.');
+      showToast('Reservering verwijderd.');
+    } catch { showToast('Verwijderen mislukt. Controleer de verbinding.'); }
+    return;
+  }
+  state.bookings = state.bookings.filter(booking => booking.id !== id);
+  save(); render(); showToast('Reservering verwijderd.');
 }
 nameForm.addEventListener('submit', async event => {
   event.preventDefault();

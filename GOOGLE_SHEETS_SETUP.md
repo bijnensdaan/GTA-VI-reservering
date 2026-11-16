@@ -1,6 +1,6 @@
 # Gedeelde opslag via Google Sheets
 
-De app ondersteunt een Google Sheet als gedeelde opslag. De Sheet blijft de bron van waarheid; de loting en controle op overlappende boekingen gebeuren in Apps Script, zodat aanvragen vanaf verschillende apparaten dezelfde uitkomst zien. Reserveringen moeten minimaal twee uur voor de start worden gedaan; die grens wordt zowel in de app als in Apps Script gecontroleerd.
+De app ondersteunt een Google Sheet als gedeelde opslag. De Sheet blijft de bron van waarheid; de loting en controle op overlappende boekingen gebeuren in Apps Script, zodat aanvragen vanaf verschillende apparaten dezelfde uitkomst zien. Er staat één rij per datum en starttijd; broers die hetzelfde slot willen, staan samen in die reservering en doen mee aan de loting. Een nog niet gestarte reservering kan worden verwijderd. Reserveringen moeten minimaal twee uur voor de start worden gedaan; die grens wordt zowel in de app als in Apps Script gecontroleerd.
 
 ## Eenmalige koppeling
 
@@ -20,4 +20,4 @@ Als je Apps Script later opnieuw implementeert, controleer dan of de `/exec`-URL
 
 ## Apps Script bijwerken
 
-Heb je Apps Script al eerder geïmplementeerd? Vervang dan de code door de nieuwste `Code.gs`, voer `setup()` opnieuw uit en kies **Implementeren → Implementaties beheren → Bewerken → Nieuwe versie**. Zo gaat ook de twee-uurscontrole live. `setup()` bewaart bestaande reserveringen en namen.
+Heb je Apps Script al eerder geïmplementeerd? Vervang dan de code door de nieuwste `Code.gs`, voer `setup()` opnieuw uit en kies **Implementeren → Implementaties beheren → Bewerken → Nieuwe versie**. Zo worden ook de twee-uurscontrole, verwijderactie, datum/tijd-normalisatie en samenvoeging van dubbele slotrijen actief. `setup()` bewaart bestaande reserveringen en namen en voegt rijen voor hetzelfde slot samen.

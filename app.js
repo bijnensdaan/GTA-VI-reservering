@@ -30,10 +30,22 @@ function seedInputs() {
   updatePlayers();
   render();
   if (isShared) {
-    $('#storage-tag').textContent = 'Google Sheet';
-    $('#storage-tag').classList.add('connected');
-    refreshShared().catch(() => showToast('Google Sheet niet bereikbaar. Controleer de Apps Script-URL.'));
+    $('#storage-tag').textContent = 'Verbinden…';
+    $('#storage-note').textContent = 'Verbinding maken met de gedeelde Google Sheet…';
+    refreshShared().catch(() => { setConnectionError(); showToast('Google Sheet niet bereikbaar. Probeer Ververs.'); });
   }
+}
+function setConnectionReady() {
+  $('#storage-tag').textContent = 'Google Sheet verbonden';
+  $('#storage-tag').classList.add('connected');
+  $('#storage-tag').classList.remove('disconnected');
+  $('#storage-note').textContent = 'Reserveringen en lotingen worden gedeeld via Google Sheet.';
+}
+function setConnectionError() {
+  $('#storage-tag').textContent = 'Sheet niet bereikbaar';
+  $('#storage-tag').classList.remove('connected');
+  $('#storage-tag').classList.add('disconnected');
+  $('#storage-note').textContent = 'De gedeelde Sheet reageert niet. Controleer je verbinding of probeer Ververs.';
 }
 function jsonp(url) {
   return new Promise((resolve, reject) => {
@@ -56,6 +68,7 @@ async function refreshShared() {
   if (!remote || !Array.isArray(remote.bookings) || !Array.isArray(remote.names)) throw new Error('Invalid response');
   state.names = remote.names;
   state.bookings = remote.bookings;
+  setConnectionReady();
   save(); updatePlayers(); render();
   if (!nameForm.contains(document.activeElement)) nameForm.querySelectorAll('input').forEach((input, i) => input.value = state.names[i] || '');
 }
@@ -194,7 +207,7 @@ nameForm.addEventListener('submit', async event => {
 });
 bookingForm.addEventListener('submit', handleBooking);
 $('#filter-date').addEventListener('change', render);
-$('#refresh-button').addEventListener('click', () => isShared ? refreshShared().then(() => showToast('Overzicht bijgewerkt.')).catch(() => showToast('Verversen mislukt.')) : render());
+$('#refresh-button').addEventListener('click', () => isShared ? refreshShared().then(() => showToast('Overzicht bijgewerkt.')).catch(() => { setConnectionError(); showToast('Verversen mislukt.'); }) : render());
 $('#close-dialog').addEventListener('click', () => dialog.close());
 $('#result-ok').addEventListener('click', () => dialog.close());
 $('#clear-button').addEventListener('click', async () => {

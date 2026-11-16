@@ -5,6 +5,7 @@ const bookingForm = $('#booking-form');
 const dialog = $('#result-dialog');
 const state = loadState();
 let toastTimer;
+let sharedRefreshPromise = null;
 const API_URL = String(window.PS_API_URL || '').trim();
 const isShared = Boolean(API_URL);
 
@@ -51,7 +52,7 @@ function jsonp(url) {
   return new Promise((resolve, reject) => {
     const callback = `__ps_cb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement('script');
-    const timeout = setTimeout(() => finish(new Error('timeout')), 10000);
+    const timeout = setTimeout(() => finish(new Error('timeout')), 20000);
     function finish(error, value) {
       clearTimeout(timeout); delete window[callback]; script.remove();
       error ? reject(error) : resolve(value);
@@ -62,9 +63,25 @@ function jsonp(url) {
     document.body.append(script);
   });
 }
-async function refreshShared() {
-  if (!isShared) return;
-  const remote = await jsonp(API_URL);
+async function readSharedWithRetry() {
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try { return await jsonp(API_URL); }
+    catch (error) {
+      lastError = error;
+      if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 900));
+    }
+  }
+  throw lastError;
+}
+function refreshShared() {
+  if (!isShared) return Promise.resolve();
+  if (sharedRefreshPromise) return sharedRefreshPromise;
+  sharedRefreshPromise = loadShared().finally(() => { sharedRefreshPromise = null; });
+  return sharedRefreshPromise;
+}
+async function loadShared() {
+  const remote = await readSharedWithRetry();
   if (!remote || !Array.isArray(remote.bookings) || !Array.isArray(remote.names)) throw new Error('Invalid response');
   state.names = remote.names;
   state.bookings = remote.bookings;

@@ -9,6 +9,7 @@ const BOOKING_HEADERS = ['ID', 'Datum', 'Starttijd', 'Duur (min)', 'Aanvragers',
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw new Error('Koppel dit Apps Script aan jullie Google Sheet.');
+  ss.setSpreadsheetTimeZone('Europe/Brussels');
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
   let bookings = ss.getSheetByName(BOOKINGS_TAB);
   if (!bookings) bookings = ss.insertSheet(BOOKINGS_TAB);
@@ -60,6 +61,9 @@ function reserve_(sheet, request) {
   const time = String(request.time || '');
   const duration = Number(request.duration);
   if (!player || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time) || ![60, 90, 120, 180].includes(duration)) return output_({ ok: false, error: 'Ongeldige reservering.' });
+  const timezone = spreadsheet_().getSpreadsheetTimeZone();
+  const startsAt = Utilities.parseDate(date + ' ' + time, timezone, 'yyyy-MM-dd HH:mm');
+  if (startsAt.getTime() < Date.now() + 2 * 60 * 60 * 1000) return output_({ ok: false, error: 'Reserveer minstens twee uur van tevoren.' });
   const names = readNames_(spreadsheet_());
   if (!names.includes(player)) return output_({ ok: false, error: 'Naam staat niet in de instellingen.' });
   const all = bookingRows_(sheet);

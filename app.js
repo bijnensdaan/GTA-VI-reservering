@@ -92,6 +92,7 @@ function handleBooking(event) {
   if (state.names.filter(Boolean).length !== 3) return showToast('Vul eerst de drie namen in.');
   const player = $('#player').value, date = $('#date').value, time = $('#time').value, duration = Number($('#duration').value);
   if (!player || !date) return showToast('Kies je naam en een datum.');
+  if (!isAtLeastTwoHoursAhead(date, time)) return showToast('Je moet minstens 2 uur van tevoren reserveren.');
   const existing = slotBookings(date, time);
   if (existing?.started) return showToast('Dit slot is al begonnen en kan niet meer worden geloot.');
   if (existing?.players.includes(player)) return showToast(`${player} staat al op de lijst voor dit slot.`);
@@ -115,6 +116,7 @@ async function handleSharedBooking() {
   if (state.names.filter(Boolean).length !== 3) return showToast('Vul eerst de drie namen in.');
   const player = $('#player').value, date = $('#date').value, time = $('#time').value, duration = Number($('#duration').value);
   if (!player || !date) return showToast('Kies je naam en een datum.');
+  if (!isAtLeastTwoHoursAhead(date, time)) return showToast('Je moet minstens 2 uur van tevoren reserveren.');
   const previous = slotBookings(date, time), oldWinner = previous?.winner || '';
   try {
     await postShared('reserve', { player, date, time, duration });
@@ -127,6 +129,10 @@ async function handleSharedBooking() {
   } catch { showToast('Opslaan mislukt. Controleer de Apps Script-URL en verbinding.'); }
 }
 function minutes(time) { const [hours, mins] = time.split(':').map(Number); return hours * 60 + mins; }
+function isAtLeastTwoHoursAhead(date, time) {
+  const start = new Date(`${date}T${time}:00`);
+  return Number.isFinite(start.getTime()) && start.getTime() >= Date.now() + 2 * 60 * 60 * 1000;
+}
 function showResult(won, winner, players, requester, previousWinner) {
   $('#result-icon').textContent = won ? '✦' : '↗';
   $('#result-title').textContent = won ? `${requester}, jij hebt gewonnen!` : `${winner} krijgt dit tijdslot`;

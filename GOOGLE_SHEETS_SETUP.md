@@ -1,6 +1,6 @@
 # Gedeelde opslag via Google Sheets
 
-De app ondersteunt een Google Sheet als gedeelde opslag. De Sheet blijft de bron van waarheid; de loting en controle op overlappende boekingen gebeuren in Apps Script, zodat aanvragen vanaf verschillende apparaten dezelfde uitkomst zien.
+De app ondersteunt een Google Sheet als gedeelde opslag. De Sheet blijft de bron van waarheid; de loting en controle op overlappende boekingen gebeuren in Apps Script, zodat aanvragen vanaf verschillende apparaten dezelfde uitkomst zien. Reserveringen moeten minimaal twee uur voor de start worden gedaan; die grens wordt zowel in de app als in Apps Script gecontroleerd.
 
 ## Eenmalige koppeling
 
@@ -17,3 +17,7 @@ De app ondersteunt een Google Sheet als gedeelde opslag. De Sheet blijft de bron
 Met de instelling **Iedereen** kan iedereen die de web-app-URL kent de reserveringen lezen en acties uitvoeren. Omdat de Pages-link openbaar is en de Apps Script-URL in `config.js` staat, behandel dit als een openbare familieplanner: zet er geen privégegevens in. Deel de Google Sheet zelf alleen met wie hem mag bekijken of beheren. De app gebruikt geen wachtwoorden en heeft geen gebruikersaccounts.
 
 Als je Apps Script later opnieuw implementeert, controleer dan of de `/exec`-URL is veranderd en werk `config.js` zo nodig bij.
+
+## Apps Script bijwerken
+
+Heb je Apps Script al eerder geïmplementeerd? Vervang dan de code door de nieuwste `Code.gs`, voer `setup()` opnieuw uit en kies **Implementeren → Implementaties beheren → Bewerken → Nieuwe versie**. Zo gaat ook de twee-uurscontrole live. `setup()` bewaart bestaande reserveringen en namen.
